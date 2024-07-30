@@ -11,35 +11,31 @@ clock = pygame.time.Clock()
 FPS = 10
 TILE_SIZE = 30
 ELEMENT_SIZE = TILE_SIZE - 2
+FONT = pygame.font.SysFont('arial', 25)
 
 # Colours
 BACKGROUND = (60, 60, 60)
 GREY = (50, 50, 50)
 GREEN = (100, 255, 10)
 RED = (255, 0, 0)
+WHITE = (255, 255, 255)
 
-# Helper class to track the position of each piece of the snake
-class Block:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-class Food(Block):
+class Food():
     def __init__(self, snake):
-        self.pos = place_food(snake)
+        self.x = place_food(snake)[0]
+        self.y = place_food(snake)[1]
         self.is_eaten = False
-        Block.__init__(self, self.pos[0], self.pos[1])
 
     def draw(self):
         pygame.draw.rect(DISPLAY, RED, pygame.Rect(self.x + 1, self.y + 1, ELEMENT_SIZE, ELEMENT_SIZE))
 
 class Snake:
     def __init__(self):
-        # Snake attributes
-        self.body = [Block(2 * TILE_SIZE, 0), Block(1 * TILE_SIZE, 0), Block(0, 0)]
+        # Start the snake in the middle of the grid
+        self.body = [(WIDTH / 2, HEIGHT / 2), ((WIDTH / 2) - TILE_SIZE, HEIGHT / 2), ((WIDTH / 2) - ( 2 * TILE_SIZE), HEIGHT / 2)]
         self.head = self.body[0]
-        
-        # Movement attributes
+        self.score = 0
+        self.food_consumed = False
         self.moving = False
         self.dx = 0
         self.dy = 0
@@ -54,8 +50,14 @@ class Snake:
 
         # Draw on the snake 
         for snake_piece in self.body:
-            pygame.draw.rect(DISPLAY, GREEN, pygame.Rect(snake_piece.x + 1, snake_piece.y + 1, ELEMENT_SIZE, ELEMENT_SIZE))
-            
+            x = snake_piece[0]
+            y = snake_piece[1]
+            pygame.draw.rect(DISPLAY, GREEN, pygame.Rect(x + 1, y + 1, ELEMENT_SIZE, ELEMENT_SIZE))
+        
+        # Draw on the current score
+        text = FONT.render("Score: " + str(self.score), True, WHITE)
+        DISPLAY.blit(text, [0, 0])
+    
     def move(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -78,38 +80,42 @@ class Snake:
                     self.dy = 1
 
         # Move the snake
+        x = self.head[0]
+        y = self.head[1]
         if self.moving:    
             if self.dx == 1:
-                self.head = Block(self.head.x + TILE_SIZE, self.head.y)
+                self.head = (x + TILE_SIZE, y)
                 self.body.insert(0, self.head)
             elif self.dx == -1:
-                self.head = Block(self.head.x - TILE_SIZE, self.head.y)
+                self.head = (x - TILE_SIZE, y)
                 self.body.insert(0, self.head)
             elif self.dy == 1:
-                self.head = Block(self.head.x, self.head.y + TILE_SIZE)
-                self.body.insert(0, self. head)
-            elif self.dy == -1:
-                self.head = Block(self.head.x, self.head.y - TILE_SIZE)
+                self.head = (x, y + TILE_SIZE)
                 self.body.insert(0, self.head)
-            self.body.pop()
+            elif self.dy == -1:
+                self.head = (x, y - TILE_SIZE)
+                self.body.insert(0, self.head)
+            if not self.food_consumed:
+                self.body.pop()
+            else:
+                self.food_consumed = False
 
 def place_food(snake):
     # Create food
     x = random.randint(0, (WIDTH - TILE_SIZE) // TILE_SIZE ) * TILE_SIZE 
     y = random.randint(0, (HEIGHT - TILE_SIZE) // TILE_SIZE ) * TILE_SIZE
 
-    print(snake.body)
     # Ensure the food does not spawn inside the snake
-    while Block(x, y) in snake.body:
+    while (x, y) in snake.body:
         x = random.randint(0, (WIDTH - TILE_SIZE) // TILE_SIZE ) * TILE_SIZE 
         y = random.randint(0, (HEIGHT - TILE_SIZE) // TILE_SIZE ) * TILE_SIZE
     
     return [x, y]
 
-def handle_collisions(score, snake, food):
+def handle_collisions(snake, food):
     def is_collision():
         # Check if the snake hits the edge
-        if snake.head.x > WIDTH - TILE_SIZE or snake.head.x < 0 or snake.head.y > HEIGHT - TILE_SIZE or snake.head.y < 0:
+        if snake.head[0] > WIDTH - TILE_SIZE or snake.head[0] < 0 or snake.head[1] > HEIGHT - TILE_SIZE or snake.head[1] < 0:
             return True
         # Check if the snake hits itself
         if snake.head in snake.body[1:]:
@@ -117,18 +123,20 @@ def handle_collisions(score, snake, food):
         return False
     
     # Check if the snake has eaten the food
-    if snake.head.x == food.x and snake.head.y == food.y:
+    if snake.head[0] == food.x and snake.head[1] == food.y:
+        snake.food_consumed = True
         food.is_eaten = True
-        score += 1
+        snake.score += 1
+    
+    return is_collision()
 
-    if is_collision():
-        print("SCORE: " + str(score))
-    
-    return score
-    
+def end_game_screen(score):
+    # Draw on end text after losing
+    DISPLAY.fill(GREY)
+    end_text = FONT.render(f'Game over! Score: {snake.score}', True, WHITE)
+    DISPLAY.blit(end_text, [195, 295])
 
 if __name__ == '__main__':
-    score = 0
     snake = Snake()
     food = Food(snake)
 
@@ -136,11 +144,21 @@ if __name__ == '__main__':
     while True:
         clock.tick(FPS)
         snake.update_ui()
-        score = handle_collisions(score, snake, food)
         if food.is_eaten:
             food = Food(snake)
         food.draw()
         snake.move()
         pygame.display.update()
-
-    pygame.quit()
+        is_collision = handle_collisions(snake, food)
+        if is_collision:
+            break
+    
+    # Display end screen after game is finished
+    while True:
+        end_game_screen(snake.score)
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+        
+    
