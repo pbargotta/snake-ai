@@ -7,63 +7,68 @@ HEIGHT = 600
 DISPLAY = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('Snake Game')
 clock = pygame.time.Clock()
-FPS = 20
+FPS = 60
 BLOCK_SIZE = 30
-SNAKE_SIZE = BLOCK_SIZE - 6
+SNAKE_PIECE_SIZE = BLOCK_SIZE - 2
 
 # Colours
 BACKGROUND = (60, 60, 60)
 GREY = (50, 50, 50)
 GREEN = (100, 255, 10)
 
-class Snake:
+# Helper class to track the position of each piece of the snake
+class SnakePiece:
     def __init__(self, x, y):
         # Snake attributes
         self.x = x
         self.y = y
-        self.colour = GREEN
-        self.entity = pygame.Surface((SNAKE_SIZE, SNAKE_SIZE))
-        self.rect = self.entity.get_rect(topleft=(self.x, self.y))
 
-        # Movement attrivutes
+class Snake:
+    def __init__(self):
+        # Snake attributes
+        self.snake = [SnakePiece(2 * BLOCK_SIZE, 0), SnakePiece(1 * BLOCK_SIZE, 0), SnakePiece(0, 0)]
+        self.head = self.snake[0]
+        
+        # Movement attributes
         self.moving = False
         self.velocity = 1
-        self.dx = self.velocity
+        self.dx = 0
         self.dy = 0
     
     def move(self):
-        if self.moving == True:
-            self.x += self.dx
-            self.y += self.dy
+        if self.moving:    
+            if self.dx == 1:
+                self.head = SnakePiece(self.head.x + BLOCK_SIZE, self.head.y)
+                self.snake.insert(0, self.head)
+            elif self.dx == -1:
+                self.head = SnakePiece(self.head.x - BLOCK_SIZE, self.head.y)
+                self.snake.insert(0, self.head)
+            elif self.dy == 1:
+                self.head = SnakePiece(self.head.x, self.head.y + BLOCK_SIZE)
+                self.snake.insert(0, self. head)
+            elif self.dy == -1:
+                self.head = SnakePiece(self.head.x, self.head.y - BLOCK_SIZE)
+                self.snake.insert(0, self.head)
+            self.snake.pop()
     
     def update(self):
-        # Fill in the snake 
-        self.entity.fill(self.colour)
-
-        # Ensure the snake is inside of the grid blocks
-        self.rect.x = self.x * BLOCK_SIZE + 3
-        self.rect.y = self.y * BLOCK_SIZE + 3
-
-        # Draw the snake 
-        DISPLAY.blit(self.entity, self.rect)
-
-# Helper function to draw the background
-def draw_background():
-        # Fill the screen
+        # Draw on the background
         DISPLAY.fill(BACKGROUND)
-        # Draw grid
         for x in range(BLOCK_SIZE, WIDTH, BLOCK_SIZE):
             pygame.draw.line(DISPLAY, GREY, (x, 0), (x, HEIGHT))
         for y in range(BLOCK_SIZE, HEIGHT, BLOCK_SIZE):
             pygame.draw.line(DISPLAY, GREY, (0, y), (WIDTH, y))
 
+        # Draw on the snake 
+        for snake_piece in self.snake:
+            pygame.draw.rect(DISPLAY, GREEN, pygame.Rect(snake_piece.x + 1, snake_piece.y + 1, SNAKE_PIECE_SIZE, SNAKE_PIECE_SIZE))
+
 if __name__ == '__main__':
-    snake = Snake(0, 0)
+    snake = Snake()
 
     # Game loop
     while True:
         clock.tick(FPS)
-        draw_background()
         snake.update()
         snake.move()
 
