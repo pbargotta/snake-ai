@@ -32,7 +32,9 @@ class Food():
 class Snake:
     def __init__(self):
         # Start the snake in the middle of the grid
-        self.body = [(WIDTH / 2, HEIGHT / 2), ((WIDTH / 2) - TILE_SIZE, HEIGHT / 2), ((WIDTH / 2) - ( 2 * TILE_SIZE), HEIGHT / 2)]
+        self.body = [(WIDTH / 2, HEIGHT / 2), 
+                     ((WIDTH / 2) - TILE_SIZE, HEIGHT / 2), 
+                     ((WIDTH / 2) - (2 * TILE_SIZE), HEIGHT / 2)]
         self.head = self.body[0]
         self.score = 0
         self.food_consumed = False
@@ -120,6 +122,7 @@ def handle_collisions(snake, food):
         # Check if the snake hits itself
         if snake.head in snake.body[1:]:
             return True
+        # If no collisions return false
         return False
     
     # Check if the snake has eaten the food
