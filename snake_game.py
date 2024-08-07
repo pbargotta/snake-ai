@@ -114,24 +114,22 @@ def place_food(snake):
     
     return [x, y]
 
-def handle_collisions(snake, food):
-    def is_collision():
-        # Check if the snake hits the edge
-        if snake.head[0] > WIDTH - TILE_SIZE or snake.head[0] < 0 or snake.head[1] > HEIGHT - TILE_SIZE or snake.head[1] < 0:
-            return True
-        # Check if the snake hits itself
-        if snake.head in snake.body[1:]:
-            return True
-        # If no collisions return false
-        return False
-    
+def is_collision(snake):
+    # Check if the snake hits the edge
+    if snake.head[0] > WIDTH - TILE_SIZE or snake.head[0] < 0 or snake.head[1] > HEIGHT - TILE_SIZE or snake.head[1] < 0:
+        return True
+    # Check if the snake hits itself
+    if snake.head in snake.body[1:]:
+        return True
+    # If no collisions return false
+    return False
+
+def check_food(snake, food):
     # Check if the snake has eaten the food
     if snake.head[0] == food.x and snake.head[1] == food.y:
         snake.food_consumed = True
         food.is_eaten = True
         snake.score += 1
-    
-    return is_collision()
 
 def end_game_screen(score):
     # Draw on end text after losing
@@ -152,8 +150,8 @@ if __name__ == '__main__':
         food.draw()
         snake.move()
         pygame.display.update()
-        is_collision = handle_collisions(snake, food)
-        if is_collision:
+        check_food(snake, food)
+        if is_collision(snake):
             break
     
     # Display end screen after game is finished
